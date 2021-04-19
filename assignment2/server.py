@@ -67,7 +67,7 @@ def initial_pca():
 #
 
 '''
-TODO: implement ccPCA here. This should return data in the same format_ as initial_pca above.
+TODO: implement ccPCA here. This should return data in the same format as initial_pca above.
 It will take in a list of data items, corresponding to the set of items selected in the visualization.
 This can be acquired from `flask.request.json`. This should be a list of data item indices - the **target set**.
 The alpha value, from the paper, should be set to 1.1 to start, though you are free to adjust this parameter.
