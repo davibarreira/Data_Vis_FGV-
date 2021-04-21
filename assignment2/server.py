@@ -34,6 +34,10 @@ episode_names=None
 # a list of painting image URLs of size n
 painting_image_urls=None
 
+projection = [0,0]
+x_loadings = []
+y_loadings = []
+
 '''
 This will return an array of strings containing the episode names -> these should be displayed upon hovering over circles.
 '''
@@ -94,17 +98,48 @@ def Diff(li1, li2):
 
 @app.route('/ccpca', methods=['GET','POST'])
 def ccpca():
-    print (request.is_json)
-    content = request.get_json()
-    # print (content['marked_data'])
-    print(len(content['projection']))
-    ids = list(range(len(content['projection'])))
-    marked = [int(i) for i in content['marked_data']]
-    unmarked = Diff(ids,marked)
-    print(marked)
-    alpha = 1.1
+    global projection
+    global x_loadings
+    global y_loadings
 
-    return 'JSON posted'
+    if request.method == 'POST':
+        content = request.get_json()
+        print(type(content))
+        ids = list(range(len(painting_attributes)))
+        marked = [int(i) for i in content['marked_data']]
+        unmarked = Diff(ids,marked)
+
+        alpha = 1.1
+        data_centered = painting_attributes.copy() 
+        data_centered -= np.mean(data_centered, axis=0) 
+        C = np.cov(data_centered.T)
+
+        cluster_y = data_centered[unmarked,:]
+        cluster_y -= np.mean(cluster_y, axis=0) 
+
+        Cy = np.cov(cluster_y.T)
+        Cr = C - alpha*Cy
+
+        w,v = np.linalg.eig(Cr)
+        eig_idx = np.argpartition(w, -2)[-2:]
+        eig_idx = eig_idx[np.argsort(-w[eig_idx])]
+        pca_components = v[:,eig_idx]
+        x_loadings = pd.DataFrame(zip(attribute_names,pca_components[:,0]),
+                                        columns=['attribute','loading']).to_dict(orient='records')
+        y_loadings = pd.DataFrame(zip(attribute_names,pca_components[:,1]),
+                                        columns=['attribute','loading']).to_dict(orient='records')
+
+        proj_data = []
+        for row in data_centered:
+            proj_data.append(pca_components.T @ row)
+        projection = np.array(proj_data).copy()
+
+    # print(x_loadings)
+
+    # return flask.jsonify({'ok':'ok'})
+    return json.dumps({"projection": projection.tolist(),
+                            "loading_x": x_loadings,
+                            "loading_y": y_loadings})
   
 #
 
