@@ -65,8 +65,6 @@ def initial_pca():
     eig_idx = np.argpartition(w, -2)[-2:]
     eig_idx = eig_idx[np.argsort(-w[eig_idx])]
     pca_components = -v[:,eig_idx]
-    # x_loadings = dict(zip(attribute_names,pca_components[:,0]))
-    # y_loadings = dict(zip(attribute_names,pca_components[:,1]))
     x_loadings = pd.DataFrame(zip(attribute_names,pca_components[:,0]),
                                     columns=['attribute','loading']).to_dict(orient='records')
     y_loadings = pd.DataFrame(zip(attribute_names,pca_components[:,1]),
@@ -89,13 +87,21 @@ It will take in a list of data items, corresponding to the set of items selected
 This can be acquired from `flask.request.json`. This should be a list of data item indices - the **target set**.
 The alpha value, from the paper, should be set to 1.1 to start, though you are free to adjust this parameter.
 '''
+def Diff(li1, li2):
+    li_dif = [i for i in li1 + li2 if i not in li1 or i not in li2]
+    return li_dif
+
+
 @app.route('/ccpca', methods=['GET','POST'])
 def ccpca():
     print (request.is_json)
     content = request.get_json()
-    print (content['marked_data'])
-    print ()
-
+    # print (content['marked_data'])
+    print(len(content['projection']))
+    ids = list(range(len(content['projection'])))
+    marked = [int(i) for i in content['marked_data']]
+    unmarked = Diff(ids,marked)
+    print(marked)
     alpha = 1.1
 
     return 'JSON posted'
