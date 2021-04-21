@@ -1,5 +1,6 @@
 import os
 import flask
+from flask import request
 import numpy as np
 import argparse
 import json
@@ -59,11 +60,27 @@ TODO: implement PCA, this should return data in the same format as you saw in th
 def initial_pca():
     data_centered = painting_attributes.copy() 
     data_centered -= np.mean(data_centered, axis=0) 
-    U, s, VT = np.linalg.svd(data_centered)
-    pca_components = VT[:2,:].astype(float)
-    x_loadings = dict(zip(attribute_names,pca_components[0]))
-    y_loadings = dict(zip(attribute_names,pca_components[1]))
-    return flask.jsonify([x_loadings, y_loadings])
+    C = np.cov(data_centered.T)
+    w,v = np.linalg.eig(C)
+    eig_idx = np.argpartition(w, -2)[-2:]
+    eig_idx = eig_idx[np.argsort(-w[eig_idx])]
+    pca_components = -v[:,eig_idx]
+    # x_loadings = dict(zip(attribute_names,pca_components[:,0]))
+    # y_loadings = dict(zip(attribute_names,pca_components[:,1]))
+    x_loadings = pd.DataFrame(zip(attribute_names,pca_components[:,0]),
+                                    columns=['attribute','loading']).to_dict(orient='records')
+    y_loadings = pd.DataFrame(zip(attribute_names,pca_components[:,1]),
+                                    columns=['attribute','loading']).to_dict(orient='records')
+
+    print(x_loadings)
+    proj_data = []
+    for row in data_centered:
+        proj_data.append(pca_components.T @ row)
+    projection = np.array(proj_data).copy()
+
+    return json.dumps({"projection": projection.tolist(),
+                            "loading_x": x_loadings,
+                            "loading_y": y_loadings})
 #
 
 '''
@@ -74,7 +91,15 @@ The alpha value, from the paper, should be set to 1.1 to start, though you are f
 '''
 @app.route('/ccpca', methods=['GET','POST'])
 def ccpca():
-    pass
+    print (request.is_json)
+    content = request.get_json()
+    print (content['marked_data'])
+    print ()
+
+    alpha = 1.1
+
+    return 'JSON posted'
+  
 #
 
 '''
