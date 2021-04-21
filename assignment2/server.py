@@ -34,7 +34,7 @@ episode_names=None
 # a list of painting image URLs of size n
 painting_image_urls=None
 
-projection = [0,0]
+projection = np.array([0,0])
 x_loadings = []
 y_loadings = []
 
@@ -134,9 +134,6 @@ def ccpca():
             proj_data.append(pca_components.T @ row)
         projection = np.array(proj_data).copy()
 
-    # print(x_loadings)
-
-    # return flask.jsonify({'ok':'ok'})
     return json.dumps({"projection": projection.tolist(),
                             "loading_x": x_loadings,
                             "loading_y": y_loadings})
@@ -159,7 +156,7 @@ def kmeans():
     df["id"] = df.index
     df['label'] = kmeans.labels_
     df = df.melt(id_vars=['id','label']).sort_values(by='id').to_json(orient='records')
-    return flask.jsonify(df)
+    return df
 #
 
 if __name__=='__main__':
